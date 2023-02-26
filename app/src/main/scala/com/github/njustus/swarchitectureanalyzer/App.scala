@@ -3,16 +3,75 @@
  */
 package com.github.njustus.swarchitectureanalyzer
 
+import io.github.classgraph.{ClassGraph, ClassInfo}
 import org.slf4j.LoggerFactory
 
-import java.nio.file.Paths
+import java.io.File
+import java.nio.file.{Files, Paths}
+import scala.jdk.CollectionConverters._
 
 object App {
   val log = LoggerFactory.getLogger(this.getClass)
 
   def main(args: Array[String]): Unit = {
-    val jarPath = Paths.get(args.head)
-    log.info(s"reading jar file: $jarPath")
+    val jarPath = Paths.get(args(0))
+    val basePackage = "ch.qos.logback.core"//args(1)
+    log.info(s"reading jar file: $jarPath with basePackage: $basePackage")
+    val cl = JarExtractor.extract(jarPath)
+    //val clz = cl.loadClass("webmodelica.core.ArgsParser")
+    //println(clz)
 
+    val classGraph = new ClassGraph()
+      .addClassLoader(cl)
+      .verbose()
+    .enableAllInfo()
+      .enableInterClassDependencies()
+      .acceptPackages(basePackage)
+
+    val result = classGraph.scan()
+
+    val interfaces = result.getAllInterfaces.asScala.map { interface =>
+      InterfaceMeta(interface.getName.stripPrefix(basePackage + "."),
+        interface.getPackageName.stripPrefix(basePackage + "."),
+      )
+    }.toSeq
+
+    val classes = result.getAllStandardClasses.asScala.map { clInfo =>
+      println(clInfo)
+      ClassMeta(
+        clInfo.getName.stripPrefix(basePackage+"."),
+        clInfo.getPackageName.stripPrefix(basePackage+"."),
+        clInfo.getClassDependencies.asScala.toSeq,
+        clInfo.getInterfaces.asScala.toSeq
+      )
+    }.toSeq
+
+    val graph = DependencyGraph(basePackage, interfaces, classes)
+    val plantUmlContent = PlantUmlGenerator.generatePlantUml(graph)
+
+    Files.writeString(Paths.get("test.puml"), plantUmlContent)
+
+    result.close()
+  }
+
+  case class DependencyGraph(
+                            basePackage: String,
+                            interfaces: Seq[InterfaceMeta],
+                            classes: Seq[ClassMeta]
+                            ) {
+    def getName(clInfo: ClassInfo) =
+      clInfo.getName.stripPrefix(basePackage+".")
+  }
+  case class InterfaceMeta(name: String,
+                           packageName: String) {
+    def uniqueName: String = name
+  }
+
+  case class ClassMeta(name: String,
+                       packageName: String,
+                        dependsOn: Seq[ClassInfo],
+                        implementedInterfaces: Seq[ClassInfo]
+                      ) {
+    def uniqueName: String = name
   }
 }
