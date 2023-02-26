@@ -32,25 +32,49 @@ object PlantUmlGenerator {
       ifMeta = findIfMeta(dependencyGraph, impledInterface)
     } yield ifMeta match {
       case Some(meta) =>
-        Some(s"${classMeta.uniqueName} --> ${meta.uniqueName}")
+        List(s"${classMeta.uniqueName} ..|> ${meta.uniqueName}")
       case None =>
         log.warn(s"Unknown interface dependency: ${impledInterface.getName}")
-        None
+        Nil
     }
 
-    options.collect { case Some(x) => x}
+    options.flatten
+  }
+
+  def findDependent(dependencyGraph: DependencyGraph, dependent: ClassInfo) =
+    dependencyGraph.classes.find { classMeta =>
+      classMeta.uniqueName == dependencyGraph.getName(dependent)
+    }
+
+  def generateUses(dependencyGraph: DependencyGraph) = {
+    val options = for {
+      classMeta <- dependencyGraph.classes
+      dependent <- classMeta.dependsOn
+      depndentMeta = findDependent(dependencyGraph, dependent)
+    } yield depndentMeta match {
+      case Some(meta) =>
+        List(s"${classMeta.uniqueName} ..> ${meta.uniqueName}")
+      case None =>
+        log.warn(s"Unknown dependency: ${dependent.getName}")
+        Nil
+    }
+
+    options.flatten
   }
 
   def generatePlantUml(dependencyGraph: DependencyGraph): String = {
     val ifDefs = generateInterfaceDefinitions(dependencyGraph.interfaces)
     val classDefs = generateClassDefinitions(dependencyGraph.classes)
     val implements = generateImplements(dependencyGraph)
+    val uses = generateUses(dependencyGraph)
 
     s"""@startuml
        |${ifDefs.mkString("\n")}
        |${classDefs.mkString("\n")}
        |
+       |
        |${implements.mkString("\n")}
+       |${uses.mkString("\n")}
        |@enduml
        |""".stripMargin
   }
