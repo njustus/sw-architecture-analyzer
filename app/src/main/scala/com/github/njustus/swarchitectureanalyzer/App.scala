@@ -11,22 +11,27 @@ import java.nio.file.{Files, Paths}
 import scala.jdk.CollectionConverters._
 
 object App {
-  val log = LoggerFactory.getLogger(this.getClass)
+  private val log = LoggerFactory.getLogger(this.getClass)
 
   def main(args: Array[String]): Unit = {
     val jarPath = Paths.get(args(0))
-    val basePackage = "ch.qos.logback.core"//args(1)
+//    val basePackage = "ch.qos.logback.core"//args(1)
+    val basePackage = args(1)
+    val outputPath = Paths.get(args(2))
     log.info(s"reading jar file: $jarPath with basePackage: $basePackage")
-    val cl = JarExtractor.extract(jarPath)
-    //val clz = cl.loadClass("webmodelica.core.ArgsParser")
-    //println(clz)
+    log.info(s"generating image to: $outputPath")
+    val cl = JarExtractor.createClassLoader(jarPath)
 
     val classGraph = new ClassGraph()
       .addClassLoader(cl)
       .verbose()
-    .enableAllInfo()
+      .enableAllInfo()
       .enableInterClassDependencies()
       .acceptPackages(basePackage)
+      .filterClasspathElements { pathElement =>
+        !pathElement.contains("$anon") &&
+        !pathElement.contains("$lazy")
+      }
 
     val result = classGraph.scan()
 
@@ -49,7 +54,7 @@ object App {
     val graph = DependencyGraph(basePackage, interfaces, classes)
     val plantUmlContent = PlantUmlGenerator.generatePlantUml(graph)
 
-    Files.writeString(Paths.get("test.puml"), plantUmlContent)
+    Files.writeString(outputPath, plantUmlContent)
 
     result.close()
   }

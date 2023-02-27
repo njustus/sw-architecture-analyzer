@@ -14,6 +14,12 @@
 .\#*
 
 *.DS_Store
+*.puml
+*.svg
+*.png
+*.jpeg
+*.jpg
+*.viz
 
 bin
 target

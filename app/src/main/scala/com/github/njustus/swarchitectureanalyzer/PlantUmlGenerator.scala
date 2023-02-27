@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory
 
 object PlantUmlGenerator {
 
-  val log = LoggerFactory.getLogger(this.getClass)
+  private val log = LoggerFactory.getLogger(this.getClass)
 
   def generateInterfaceDefinitions(interfaces: Seq[App.InterfaceMeta]) =
     interfaces.map { interface =>
