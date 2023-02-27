@@ -14,13 +14,11 @@ object App {
   private val log = LoggerFactory.getLogger(this.getClass)
 
   def main(args: Array[String]): Unit = {
-    val jarPath = Paths.get(args(0))
-//    val basePackage = "ch.qos.logback.core"//args(1)
-    val basePackage = args(1)
-    val outputPath = Paths.get(args(2))
-    log.info(s"reading jar file: $jarPath with basePackage: $basePackage")
-    log.info(s"generating image to: $outputPath")
-    val cl = JarExtractor.createClassLoader(jarPath)
+    val conf = CliArguments.parse(args.toSeq)
+    val basePackage = conf.basePackage
+    log.info(s"reading jar file: ${conf.jarFile} with basePackage: ${basePackage}")
+    log.info(s"generating image to: ${conf.outputFile}")
+    val cl = JarExtractor.createClassLoader(conf.jarFile)
 
     val classGraph = new ClassGraph()
       .addClassLoader(cl)
@@ -54,7 +52,9 @@ object App {
     val graph = DependencyGraph(basePackage, interfaces, classes)
     val plantUmlContent = PlantUmlGenerator.generatePlantUml(graph)
 
-    Files.writeString(outputPath, plantUmlContent)
+    Files.writeString(conf.outputFile, plantUmlContent)
+    log.info(s"graph saved to ${conf.outputFile}")
+    println(s"call: plantuml -tsvg ${conf.outputFile}")
 
     result.close()
   }
@@ -64,7 +64,7 @@ object App {
                             interfaces: Seq[InterfaceMeta],
                             classes: Seq[ClassMeta]
                             ) {
-    def getName(clInfo: ClassInfo) =
+    def getName(clInfo: ClassInfo): String =
       clInfo.getName.stripPrefix(basePackage+".")
   }
   case class InterfaceMeta(name: String,
