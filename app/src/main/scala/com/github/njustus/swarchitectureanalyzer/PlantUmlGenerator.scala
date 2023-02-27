@@ -1,20 +1,20 @@
 package com.github.njustus.swarchitectureanalyzer
 
-import com.github.njustus.swarchitectureanalyzer.App.DependencyGraph
 import io.github.classgraph.ClassInfo
 import org.slf4j.LoggerFactory
+import dtos._
 
 object PlantUmlGenerator {
 
   private val log = LoggerFactory.getLogger(this.getClass)
 
-  def generateInterfaceDefinitions(interfaces: Seq[App.InterfaceMeta]) =
+  def generateInterfaceDefinitions(interfaces: Seq[InterfaceMeta]) =
     interfaces.map { interface =>
       val name = interface.uniqueName
       s"interface $name"
     }
 
-  def generateClassDefinitions(classes: Seq[App.ClassMeta]) =
+  def generateClassDefinitions(classes: Seq[ClassMeta]) =
     classes.map { classMeta =>
       val name = classMeta.uniqueName
       s"class $name"

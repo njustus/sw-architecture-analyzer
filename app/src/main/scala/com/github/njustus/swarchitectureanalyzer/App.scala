@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.{Files, Paths}
 import scala.jdk.CollectionConverters._
+import dtos._
 
 object App {
   private val log = LoggerFactory.getLogger(this.getClass)
@@ -57,26 +58,5 @@ object App {
     println(s"call: plantuml -tsvg ${conf.outputFile}")
 
     result.close()
-  }
-
-  case class DependencyGraph(
-                            basePackage: String,
-                            interfaces: Seq[InterfaceMeta],
-                            classes: Seq[ClassMeta]
-                            ) {
-    def getName(clInfo: ClassInfo): String =
-      clInfo.getName.stripPrefix(basePackage+".")
-  }
-  case class InterfaceMeta(name: String,
-                           packageName: String) {
-    def uniqueName: String = name
-  }
-
-  case class ClassMeta(name: String,
-                       packageName: String,
-                        dependsOn: Seq[ClassInfo],
-                        implementedInterfaces: Seq[ClassInfo]
-                      ) {
-    def uniqueName: String = name
   }
 }
