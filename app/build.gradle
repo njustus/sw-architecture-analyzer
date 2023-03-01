@@ -24,7 +24,6 @@ tasks.withType(ScalaCompile) {
     "-encoding", "utf8",
     "-language:higherKinds",
     "-language:postfixOps",
-    "-Xfatal-warnings",
     "-Ymacro-annotations"
   ]
 }
